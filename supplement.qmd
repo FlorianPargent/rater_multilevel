@@ -1,0 +1,8 @@
+---
+title: "Further Analyses"
+format: html
+---
+
+```{r}
+summary(cars)
+```

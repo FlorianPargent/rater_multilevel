@@ -1,0 +1,23 @@
+project:
+  type: manuscript
+
+manuscript:
+  article: manuscript.qmd
+  notebooks:
+    - notebook: supplement.qmd
+
+format:
+  apaquarto-html:
+    suppress-title-introduction: true
+    notebook-view:
+      - notebook: supplement.qmd
+        title: Further Analyses
+  apaquarto-docx: default
+  apaquarto-typst: default
+
+format-links:
+  - apaquarto-html
+  - format: apaquarto-typst
+    text: PDF
+  - format: apaquarto-docx
+    text: MS Word

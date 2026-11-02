@@ -1,0 +1,53 @@
+---
+title: "A unifying framework for modeling rater reliability based on Bayesian multilevel models"
+shorttitle: "A unifying framework for modeling rater reliability"
+date: ""
+date-modified: ""
+date-format: iso
+author:
+  - name: Florian Pargent
+    corresponding: true
+    email: florian.pargent@psy.lmu.de
+    orcid: 0000-0002-2388-553X
+    affiliations:
+      - id: "lmu"
+        name: LMU Munich
+        department: Department of Psychology
+        address: Leopoldstr. 13
+        city: D-80802 Munich
+        country: Germany
+        postal-code: 80802
+abstract: "Abstract"
+keywords: [rater reliability, Bayesian multilevel model, ICC, Kappa, ordinal data]
+bibliography: references.bib
+floatsintext: true
+numbered-lines: false
+license: CC BY 4.0
+---
+
+::: {.content-visible when-format="html"}
+# Introduction
+:::
+
+This is the main manuscript. See the computational notebook for the analysis.
+
+# Method
+
+Text goes here.
+
+# Results
+
+```{r}
+#| label: fig-example
+#| fig-cap: "Example figure."
+plot(cars)
+```
+
+# Discussion
+
+Text goes here.
+
+# References
+
+::: {#refs}
+:::
