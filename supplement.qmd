@@ -5,7 +5,9 @@ format: html
 
 ## Continuous example
 
-brms code:
+Use the ordinal dataset and show bad model fit visually. Mention problems with comparing continuous and ordinal likelihoods based on loo.
+
+brms code baseline model:
 
 ```{r}
 #| eval: false
@@ -32,3 +34,25 @@ fit_cont <- brm(
   cores = 4
 )
 ```
+
+## Demonstrate theoretical equivalence
+
+Show for the standard continuous multilevel model that:
+
+- ICCs can also be computed based on posterior predictive simulations instead of ratios of variance components
+- ICC computation based on variance components match the intra-class correlations under specific rater scenarios.
+
+*Auszug aus der Diagnostik 2 Vorlesung:*
+
+>Jede ICC kann als Schätzwert
+für die Korrelation zwischen zwei Ratings
+der gleichen Personen in der Population
+interpretiert werden:
+>- ICC(1,1): Für jede Person werden die beiden Rater zufällig gezogen.
+(In Modell 1 können die Rater ohnehin nicht identifiziert werden)
+>- ICC(2,1): Für jede Person werden die beiden Rater zufällig gezogen.
+Jede Person wird also von zwei neuen Ratern beurteilt.
+>- ICC(3,1): Es werden zwei Rater (Rater 1 und Rater 2) zufällig gezogen und diese beiden Rater beurteilen alle Personen.
+>
+>Für die average ICCs bezieht sich die Korrelation analog auf zwei mittlere
+Ratings (mittleres Rating 1 und 2) der gleichen Personen.
