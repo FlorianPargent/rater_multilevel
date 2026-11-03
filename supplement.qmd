@@ -3,6 +3,32 @@ title: "Further Analyses"
 format: html
 ---
 
+## Continuous example
+
+brms code:
+
 ```{r}
-summary(cars)
+#| eval: false
+f_cont <- bf(
+  y ~ 1 + (1 | rater) + (1 | subject)
+)
+
+# Priors
+priors_cont <- c(
+  prior(normal(0, 1.5), class = "Intercept"),
+  prior(normal(0, 1), class = "sd", group = "rater"),
+  prior(normal(0, 1), class = "sd", group = "subject"),
+  prior(exponential(1), class = "sigma")
+)
+
+# Fit
+fit_cont <- brm(
+  formula = f_cont,
+  data = dat_cont,
+  family = gaussian(link = "identity"),
+  prior = priors_cont,
+
+  chains = 4,
+  cores = 4
+)
 ```

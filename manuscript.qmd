@@ -18,34 +18,207 @@ author:
         country: Germany
         postal-code: 80802
 abstract: "Abstract"
-keywords: [rater reliability, Bayesian multilevel model, ICC, Kappa, ordinal data]
+keywords: [rater reliability, Bayesian multilevel model, intra-class correlation, Cohen's kappa, ordinal regression]
 bibliography: references.bib
 floatsintext: true
 numbered-lines: false
 license: CC BY 4.0
+
+execute:
+  echo: true
 ---
 
 ::: {.content-visible when-format="html"}
 # Introduction
 :::
 
-This is the main manuscript. See the computational notebook for the analysis.
+In psychology, rater reliability is traditionally taught for continuous and dichotomous seperately.
+For continuous ratings, intra-class coefficients (ICCs) based on the taxonomy by @shrout1979intraclass are standard.
+For dichotomous ratings, Cohen's $\kappa$ [kappa\; @cohen1960coefficient] is predominantly used.
+We call those the *legacy methods*. When they were invented, calculations were often still performed without computers. Multilevel models did not exist in the modern sense or could not be estimated efficiently.  
 
-# Method
+Problems:
 
-Text goes here.
+- Similarities between continuous and dichotomous measures often not known to researchers today although this was known when these measures were developed: for large samples and dichotomous ratings coded as 0 and 1, Cohen’s kappa is approximately equal to the ICC(2,1) [@fleiss1973equivalence] computed on the same data; Scott's Pi is approximately equal to the ICC(1,1) [@fleiss1975measuring].
+- Computing the traditional measures is performed without reasoning about what is the goal
+- Clinical psychology rarely collects data from more than 2 raters, because kappa is only for 2 raters. Organizational psychology usually collects data from more than 2 raters, because ICC computation is unstable for 2 raters.
+- Uncertainty estimation is often neglected (although available for all legacy methods). Confidence intervals would show uge uncertainty for common sample sizes.
+- Traditional measures do not answer typical questions in applied scenarios
 
-# Results
+# A unifying framework
+
+Replace traditional methods with multilevel models adapted to the specific rater scenario.
+Use Bayesian methods for robust estimation and extensibility.
+Fit multilevel models with brms [@buerkner2017brms].
+Use modern principles of Bayesian workflow.
+Discuss how a general, model-agnostic definition of reliability would look like [for example, see @bignardi2025general].
+
+# Modeling ratings with multilevel models
+
+Explain random intercepts for raters $r = 1, \ldots, R$ and subject $s = 1, \ldots, S$.
+
+$$
+u_r \sim \operatorname{Normal}(0,\sigma_{\mathrm{raters}}^2),
+\qquad
+v_s \sim \operatorname{Normal}(0,\sigma_{\mathrm{subjects}}^2).
+$$
+
+## Multilevel models for continuous ratings
+
+Give formulas for the standard linear mixed model and show how the 6 ICCs are computed based on variance components.
+Note that standard software like `psych::ICC()` uses a frequentist multilevel model to estimate ICCs by default.
+Switch to analysis of variance computation is useful if the multilevel model does not converge for limited data.
+Note that these models are rarely justified in practice because ratings are usually ordered (or bounded continuous).
+
+$$
+y_{rs}\sim\operatorname{Normal}(\eta_{rs},\sigma^2),
+$$
+
+$$
+\eta_{rs}=\alpha+u_r+v_s.
+$$
+
+## Multilevel models for dichotomous ratings
+
+Give formula for the logistic mixed model and note that this model is equivalent to the dichotomous Rasch model depending on parametrization [@buerkner2021bayesian].
+Explain why a computation of ICCs similar to the Gaussian model has a different interpretation.
+Discuss different approaches to compute reliability measures.
+
+$$
+y_{rs}\sim\operatorname{Bernoulli}(p_{rs}),
+$$
+
+$$
+\operatorname{logit}(p_{rs})=\eta_{rs},
+\qquad
+p_{rs} = \Pr(y_{rs} = 1),
+\qquad
+\eta_{rs}=\alpha+u_r+v_s.
+$$
+
+## Multilevel models for ordinal ratings
+
+Give formula for the cumulative mixed model.
+Argue that the cumulative model best fits the theoretical model of traditional ratings: higher category if a threshold is crossed [@buerkner2019ordinal].
+Discuss different approaches to compute reliability measures.
+
+For ordered categories $y_{rs}\in\{1,\ldots,K\}$,
+
+$$
+\operatorname{logit}\!\left[\Pr(y_{rs}\le k)\right] =\kappa_k-\eta_{rs},
+\qquad k=1,
+\ldots,K-1,
+$$
+
+$$
+\kappa_1<\cdots<\kappa_{K-1},
+\qquad
+\eta_{rs}=u_r+v_s.
+$$
+
+# Incorporating principles of Bayesian workflow
+
+## Prior and posterior model checking
+
+Prior simulation to allow fitting models for extreme case of only two raters.
+Use simulations for design analysis before collecting data in practical applications.
+
+Use posterior predictive checks to increase trust in models or suggest useful extensions from the basic models.
+If standard models are not enough, use cross-validation to compare models of different complexity.
+
+## Simulating bespoke application scenarios
+
+New raters. More raters. Remove threshold differences.
+Extend models to incorporate rater heterogeneity in thresholds, additional predictors or more complicated processes like response styles.
+
+## Computing bespoke summary statistics
+
+Compute rater agreement, kappa or other traditional measures based on posterior predictive observations including credibility intervals.
+
+# Application examples
+
+Skip continuous example (or move to ESM) because rarely appropriate in practice.
+Review how certain ICCs refer to specific simulation scenarios and refer to the ESM where we show these similarities empirically with comparing the computation based on the variance components with an explicit scenario-based simulation (e.g. simulate ratings from new raters and show that correlations based on these simulated data are similar to a specific ICC).
+Show step by step code directly in the manuscript (if manuscript becomes too long or repetitive move some parts to the ESM) but do not explain all the code in detail.
+Most users will use AI anyway, so traditional tutorials are loosing relevance fast).
+
+## Dichotomous example
+
+**TODO:** Find nice open dataset, ideally classical sick/healthy raings from clinical psychology with at least 3 raters (so we can both model all raters and split the dataset to show common extreme case of only 2 raters).
+
+- Discuss conservative prior assumptions (move full prior predictive simulations to ESM)
+- Discuss how simulations could be used for design analysis
+- Fit model on empirical data and check convergence diagnostics (divergences, Rhat)
+- Compute interesting summary statistics (agreement, kappa)
+- Showcase how to simulate statistics for one more complex but practically relevant scenario
+
+brms code:
 
 ```{r}
-#| label: fig-example
-#| fig-cap: "Example figure."
-plot(cars)
+#| eval: false
+f_dich <- bf(
+  y ~ 1 + (1 | rater) + (1 | subject)
+)
+
+priors_dich <- c(
+  prior(normal(0, 1.5), class = "Intercept"),
+  priors_sd
+)
+
+fit_dich <- brm(
+  formula = f_dich,
+  data = dat_dich,
+  family = bernoulli(link = "logit"),
+  prior = priors_dich,
+  
+  chains = 4,
+  cores = 4
+)
+```
+
+## Ordinal example
+
+**TODO:** Find nice open dataset, ideally classical ordinal assessment center ratings from organizational psychology with at least 3 raters (I think the case of only 2 raters is less relevant in these settings, are traditional ICCs usually need more raters than 2).
+
+- Discuss conservative prior assumptions (move full prior predictive simulations to ESM)
+- Skip discussion of design analysis
+- Fit model on empirical data and check convergence diagnostics (divergences, Rhat)
+- Compute interesting summary statistics (ICC variants)
+- Showcase how to simulate statistics for one more complex but practically relevant scenario
+
+brms code:
+
+```{r}
+#| eval: false
+f_ord <- bf(
+  y ~ 1 + (1 | rater) + (1 | subject),
+  disc = 1
+)
+
+priors_ord <- c(
+  prior(normal(0, 2), class = "Intercept"),
+  priors_sd
+)
+
+fit_ord <- brm(
+  formula = f_ord,
+  data = dat_ord,
+  family = cumulative(
+    link = "logit",
+    threshold = "flexible"
+  ),
+  prior = priors_ord,
+
+  chains = 4,
+  cores = 4
+)
 ```
 
 # Discussion
 
-Text goes here.
+Textbooks of Psychological Assessment lack behind recent methodological advances.
+Fitting complex multilevel models is not a barrier anymore.
+Efficient software like brms is available and state-of-the-art large language models are good enough to help with model specification and validating model fit.
 
 # References
 
