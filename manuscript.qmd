@@ -155,7 +155,30 @@ Most users will use AI anyway, so traditional tutorials are loosing relevance fa
 
 ## Dichotomous example
 
-**TODO:** Find nice open dataset, ideally classical sick/healthy raings from clinical psychology with at least 3 raters (so we can both model all raters and split the dataset to show common extreme case of only 2 raters). The dataset will partly determine which model extensions can be meaningfully demonstrated.
+Dataset: @rubin2024low
+
+- primary criterion of PTSD rated by 6 raters (3 Phd students, 3 clinical psychologists) based on self-reports of undergraduate students
+- 4 different versions of the self-report measure. 100 subjects per version. all raters rate all subjects.
+
+possibilities for extended analyses (paper shows contrasts in kappa and uses bootstrap cis):
+
+- use version as predictor
+- use expertise as predictor (it looks like clinicians are more inconsistent)
+- simulate using a different number of raters
+- simulate perfect rater training (as discussed in the paper, clinicians where not trained together with the three Phd raters)
+
+data issues:
+
+- 2 missing ratings by one rater although the paper claims only complete cases: either replace by 1s (all other raters agree on both cases or remove questionnaire version lec3 where the NAs appear)
+- should not use trauma type as a predictor because subject ID is missing and Claude found inconsistencies with the paper for some versions when merged based on row order (this is an error in the paper!)
+
+**TODOs:**
+
+- decide how to handle the data issues
+- decide which kappas to discuss for more than 2 raters: conger, fleiss, light
+- decide which scenarios and intuitive agreement measures to use
+
+Outline:
 
 - Discuss conservative prior assumptions (move full prior predictive simulations to ESM)
 - Discuss how simulations could be used for design analysis
@@ -166,26 +189,38 @@ Most users will use AI anyway, so traditional tutorials are loosing relevance fa
 brms code baseline model:
 
 ```{r}
-#| eval: false
+#| message: false
+#| results: hide
+library(tidyverse)
+library(brms)
+
+dat_dich <- read.csv("data/rubin_2024_crita.csv")
+dat_dich <- dat_dich |> rename(y = crit_a)
+
 f_dich <- bf(
-  y ~ 1 + (1 | rater) + (1 | subject)
+  y ~ 1 + (1 | rater) + (1 | subject),
+  family = bernoulli(link = "logit"),
+  center = FALSE
 )
-
 priors_dich <- c(
-  prior(normal(0, 1.5), class = "Intercept"),
-  priors_sd
+  prior(normal(0, 1), class = "b", coef = "Intercept"),
+  prior(normal(0, 1), class = "sd", group = "rater"),
+  prior(normal(0, 1), class = "sd", group = "subject")
 )
-
 fit_dich <- brm(
   formula = f_dich,
-  data = dat_dich,
-  family = bernoulli(link = "logit"),
   prior = priors_dich,
-  
+  data = dat_dich,
+  seed = 42,
   chains = 4,
   cores = 4
 )
 ```
+
+```{r}
+summary(fit_dich)
+```
+
 
 ## Ordinal example
 

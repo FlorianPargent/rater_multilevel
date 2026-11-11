@@ -1,9 +1,25 @@
 ---
 title: "Further Analyses"
 format: html
+
+execute:
+  echo: true
+  eval: false
 ---
 
-## Continuous example
+Load packages and datasets
+
+```{r}
+library(tidyverse)
+library(brms)
+
+dat_dich <- read.csv("data/rubin_2024_crita.csv")
+dat_dich <- dat_dich |> rename(y = crit_a)
+```
+
+# Continuous example
+
+## Fit continuous model
 
 Use the ordinal dataset and show bad model fit visually. Mention problems with comparing continuous and ordinal likelihoods based on loo.
 
@@ -56,3 +72,60 @@ Jede Person wird also von zwei neuen Ratern beurteilt.
 >
 >Für die average ICCs bezieht sich die Korrelation analog auf zwei mittlere
 Ratings (mittleres Rating 1 und 2) der gleichen Personen.
+
+
+# Dichotomous example
+
+## Prior predictive checks
+
+Sample predictions from the priors
+
+```{r}
+f_dich <- bf(
+  y ~ 1 + (1 | rater) + (1 | subject),
+  family = bernoulli(link = "logit"),
+  center = FALSE
+)
+priors_dich <- c(
+  prior(normal(0, 1), class = "b", coef = "Intercept"),
+  prior(normal(0, 1), class = "sd", group = "rater"),
+  prior(normal(0, 1), class = "sd", group = "subject")
+)
+fit_dich <- brm(
+  formula = f_dich,
+  prior = priors_dich,
+  data = dat_dich,
+  seed = 42,
+  chains = 4,
+  cores = 4,
+  sample_prior = "only"
+)
+```
+
+compute prior predictive checks
+
+**TODO:** Think of a small set of informative and intuitive checks and plot them (e.g. 2 x 2 panel)
+
+```{r}
+#| message: false
+# prior predictive checks
+
+d <- na.omit(fit_dich$data[, c("y", "rater", "subject")])
+
+# Overall prevalence
+pp_check(fit_dich, newdata = d, type = "stat",
+         stat = "mean", prefix = "ppd")
+
+# probability that a pair of randomly drawn raters agrees
+agreement <- function(y) {
+  n <- table(dat_dich$subject, y)
+  sum(choose(n, 2)) / sum(choose(rowSums(n), 2))
+}
+
+pp_check(fit_dich, type = "stat", stat = "agreement", prefix = "ppd")
+```
+
+# Ordinal example
+
+## Prior predictive checks
+
